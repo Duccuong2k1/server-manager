@@ -86,7 +86,7 @@ const AppSidebar: React.FC = () => {
         }`}
       >
         <Link href="/" className="text-black font-semibold dark:text-white uppercase">
-          Admin Dashboard
+          {isExpanded ? "Server Manager" : "SM"}
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
