@@ -5,6 +5,7 @@ import React, { useCallback } from "react";
 import { useSidebar } from "../context/SidebarContext";
 import {
   GridIcon,
+  GroupIcon,
   HorizontaLDots,
   UserCircleIcon
 } from "../icons/index";
@@ -21,6 +22,11 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+  },
+  {
+    icon: <GroupIcon />,
+    name: "Servers",
+    path: "/servers",
   },
   {
     icon: <UserCircleIcon />,
