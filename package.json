@@ -26,6 +26,7 @@
     "autoprefixer": "^10.4.20",
     "date-fns": "^4.1.0",
     "flatpickr": "^4.6.13",
+    "leaflet": "^1.9.4",
     "next": "15.2.3",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
@@ -34,6 +35,7 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.57.0",
+    "react-leaflet": "^5.0.0",
     "swiper": "^11.2.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.25.56"
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@svgr/webpack": "^8.1.0",
+    "@types/leaflet": "^1.9.18",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
