@@ -17,6 +17,9 @@ import ServerModal from './ServerModal'
 import ServerActions from './ServerActions'
 import { Server } from '@/lib/supabase/types'
 import { formatDate } from '@/lib/helpers/parser'
+import Pagination from '../common/Pagination'
+import { Modal } from '@/components/ui/modal'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 
 const statusColors = {
   active: 'success',
@@ -25,9 +28,25 @@ const statusColors = {
 } as const
 
 export default function ServerList() {
-  const { servers, loading, error, deleteServer, updateServer } = useServers()
+  const pageSize = 10
+  const {
+    servers,
+    loading,
+    error,
+    total,
+    currentPage,
+    setCurrentPage,
+    addServer,
+    updateServer,
+    deleteServer,
+    refreshServers
+  } = useServers(1, pageSize)
   const [selectedServer, setSelectedServer] = useState<Server | undefined>()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const totalPages = Math.ceil(total / pageSize)
+  const [deleteTarget, setDeleteTarget] = useState<Server | undefined>()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [actionOpenId, setActionOpenId] = useState<string | undefined>()
 
   const handleCreateServer = () => {
     setSelectedServer(undefined)
@@ -40,13 +59,27 @@ export default function ServerList() {
   }
 
   const handleDeleteServer = async (server: Server) => {
-    if (window.confirm('Are you sure you want to delete this server?')) {
-      await deleteServer(server.id)
+    setDeleteTarget(server)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteTarget) {
+      await deleteServer(deleteTarget.id)
+      refreshServers()
+      setShowDeleteModal(false)
+      setDeleteTarget(undefined)
     }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setDeleteTarget(undefined)
   }
 
   const handleChangeStatus = async (server: Server, status: Server['status']) => {
     await updateServer(server.id, { ...server, status })
+    refreshServers()
   }
 
   return (
@@ -98,7 +131,7 @@ export default function ServerList() {
                   </TableRow>
                 ))}
               </>
-            ) : servers.length > 0 ? servers.map((server) => (
+            ) : servers.length > 0 ? servers.map((server, index) => (
               <TableRow key={server.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                 <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">
                   <div className="flex flex-col gap-2">
@@ -122,6 +155,10 @@ export default function ServerList() {
                     onEdit={handleEditServer}
                     onDelete={handleDeleteServer}
                     onChangeStatus={handleChangeStatus}
+                    direction={index >= servers.length - 3 ? 'up' : 'down'}
+                    isOpen={actionOpenId === server.id}
+                    onOpen={() => setActionOpenId(server.id)}
+                    onClose={() => setActionOpenId(undefined)}
                   />
                 </TableCell>
               </TableRow>
@@ -133,11 +170,33 @@ export default function ServerList() {
           </TableBody>
         </Table>
       </div>
-
+      <div className="flex items-center justify-between mt-4">
+        <span className="text-sm text-gray-500 ml-4">Total: {total} servers</span>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </div>
       <ServerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         server={selectedServer}
+        onSave={async (data) => {
+          if (selectedServer) {
+            await updateServer(selectedServer.id, data)
+          } else {
+            await addServer(data)
+          }
+          setIsModalOpen(false)
+          refreshServers()
+        }}
+      />
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        serverName={deleteTarget?.name}
       />
     </div>
   )

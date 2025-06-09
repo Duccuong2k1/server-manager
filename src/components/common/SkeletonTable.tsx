@@ -7,7 +7,7 @@ const SkeletonTable: React.FC = () => {
   return (
     <>
     {
-        [...Array(5)].map((_, index) => (
+        [...Array(7)].map((_, index) => (
             <TableCell key={index} className="py-3">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
             </TableCell>

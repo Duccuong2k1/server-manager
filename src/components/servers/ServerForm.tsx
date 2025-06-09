@@ -17,10 +17,10 @@ const serverSchema = z.object({
   architecture: z.enum(['x86_64', 'arm64', 'i386'] as const),
   status: z.enum(['active', 'inactive', 'maintenance'] as const),
   region: z.string().min(1, 'Region is required'),
-  cpu_usage:  z.coerce.number().default(0),
-  memory_usage: z.coerce.number().default(0),
-  latitude: z.coerce.number().default(0),
-  longitude: z.coerce.number().default(0),
+  cpu_usage:  z.coerce.number().default(0).optional(),
+  memory_usage: z.coerce.number().default(0).optional(),
+  latitude: z.any().optional(),
+  longitude: z.any().optional(),
 })
 
 type ServerFormData = z.infer<typeof serverSchema>
@@ -28,9 +28,10 @@ type ServerFormData = z.infer<typeof serverSchema>
 interface ServerFormProps {
   server?: Server
   onClose: () => void
+  onSave?: (data: any) => Promise<void>
 }
 
-export default function ServerForm({ server, onClose }: ServerFormProps) {
+export default function ServerForm({ server, onClose, onSave }: ServerFormProps) {
   const { addServer, updateServer ,refreshServers} = useServers()
   const { control, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ServerFormData>({
     resolver: zodResolver(serverSchema) as any,
@@ -89,16 +90,18 @@ export default function ServerForm({ server, onClose }: ServerFormProps) {
       const formData: any = {
         ...data,
         updated_at: new Date().toISOString(),
-     
       }
-
-      if (server) {
-        await updateServer(server.id, formData)
+      if (onSave) {
+        await onSave(formData)
       } else {
-        await addServer(formData)
+        if (server) {
+          await updateServer(server.id, formData)
+        } else {
+          await addServer(formData)
+        }
+        onClose()
+        refreshServers()
       }
-      onClose()
-      refreshServers()
     } catch (error) {
       console.error('Error submitting form:', error)
     }
@@ -267,16 +270,11 @@ export default function ServerForm({ server, onClose }: ServerFormProps) {
                 type="number"
                 defaultValue={field.value}
                 {...field}
-                error={!!errors.memory_usage}
-                hint={errors.memory_usage?.message}
-                placeholder="Enter memory usage"
+                placeholder="Memory Usage"
               />
             )}
           />
         </div>
-
-     
-
         <div>
           <Label>Latitude</Label>
           <Controller
@@ -285,16 +283,15 @@ export default function ServerForm({ server, onClose }: ServerFormProps) {
             render={({ field }) => (
               <Input
                 type="number"
+                step={0.000001}
+
                 defaultValue={field.value}
-                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}   
-                error={!!errors.latitude}
-                hint={errors.latitude?.message}
-                placeholder="Enter latitude"
+                {...field}
+                placeholder="Latitude"
               />
             )}
           />
         </div>
-
         <div>
           <Label>Longitude</Label>
           <Controller
@@ -303,25 +300,17 @@ export default function ServerForm({ server, onClose }: ServerFormProps) {
             render={({ field }) => (
               <Input
                 type="number"
-              
+                step={0.000001}
+                {...field}
                 defaultValue={field.value}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
-                error={!!errors.longitude}
-                hint={errors.longitude?.message}
-                placeholder="Enter longitude"
-     
+                placeholder="Longitude"
               />
             )}
           />
         </div>
       </div>
-
-      <div className="flex justify-end space-x-3 mt-6">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-        >
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button

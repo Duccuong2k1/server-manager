@@ -6,9 +6,10 @@ interface ServerModalProps {
   isOpen: boolean
   onClose: () => void
   server?: Server
+  onSave?: (data: any) => Promise<void>
 }
 
-export default function ServerModal({ isOpen, onClose, server }: ServerModalProps) {
+export default function ServerModal({ isOpen, onClose, server, onSave }: ServerModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-2xl p-6">
       <div className="mb-4">
@@ -20,6 +21,7 @@ export default function ServerModal({ isOpen, onClose, server }: ServerModalProp
       <ServerForm
         server={server}
         onClose={onClose}
+        onSave={onSave}
       />
     </Modal>
   )

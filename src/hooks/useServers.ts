@@ -1,26 +1,27 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { Server } from '@/lib/supabase/types'
+import { supabase } from '@/lib/supabase/client'
 
-export function useServers() {
+export function useServers(page = 1, pageSize = 10) {
     const [servers, setServers] = useState<Server[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [total, setTotal] = useState(0)
+    const [currentPage, setCurrentPage] = useState(page)
+    const [currentPageSize, setCurrentPageSize] = useState(pageSize)
 
     useEffect(() => {
-        fetchServers()
-    }, [])
+        fetchServers(currentPage, currentPageSize)
+    }, [currentPage, currentPageSize])
 
-    const fetchServers = async () => {
+    const fetchServers = async (page: number, pageSize: number) => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
-                .from('servers')
-                .select('*')
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
-            setServers(data || [])
+            const res = await fetch(`/api/servers?page=${page}&pageSize=${pageSize}`)
+            if (!res.ok) throw new Error('Failed to fetch servers')
+            const data = await res.json()
+            setServers(data.servers)
+            setTotal(data.total)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
         } finally {
@@ -35,9 +36,9 @@ export function useServers() {
                 .insert([server])
                 .select()
                 .single()
-
             if (error) throw error
             setServers(prev => [data, ...prev])
+            setTotal(prev => prev + 1)
             return data
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
@@ -53,11 +54,8 @@ export function useServers() {
                 .eq('id', id)
                 .select()
                 .single()
-
             if (error) throw error
-            setServers(prev => prev.map(server =>
-                server.id === id ? { ...server, ...data } : server
-            ))
+            setServers(prev => prev.map(server => server.id === id ? { ...server, ...data } : server))
             return data
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
@@ -71,9 +69,9 @@ export function useServers() {
                 .from('servers')
                 .delete()
                 .eq('id', id)
-
             if (error) throw error
             setServers(prev => prev.filter(server => server.id !== id))
+            setTotal(prev => prev - 1)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
             throw err
@@ -84,9 +82,14 @@ export function useServers() {
         servers,
         loading,
         error,
+        total,
+        currentPage,
+        setCurrentPage,
+        pageSize: currentPageSize,
+        setPageSize: setCurrentPageSize,
+        refreshServers: () => fetchServers(currentPage, currentPageSize),
         addServer,
         updateServer,
-        deleteServer,
-        refreshServers: fetchServers
+        deleteServer
     }
 } 
