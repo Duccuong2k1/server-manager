@@ -13,8 +13,8 @@ const serverSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   ip_address: z.string().min(1, 'IP Address is required'),
   os: z.string().min(1, 'OS is required'),
-  platform: z.enum(['linux', 'windows', 'macos'] as const),
-  architecture: z.enum(['x86_64', 'arm64', 'i386'] as const),
+  platform: z.string().min(1, 'Platform is required'),
+  architecture: z.string().min(1, 'Architecture is required'),
   status: z.enum(['active', 'inactive', 'maintenance'] as const),
   region: z.string().min(1, 'Region is required'),
   cpu_usage:  z.coerce.number().default(0).optional(),
@@ -41,7 +41,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
       os: '',
       platform: 'linux',
       architecture: 'x86_64',
-      status: 'inactive',
+      status: 'active',
       region: '',
       cpu_usage: 0,
       memory_usage: 0,
@@ -51,22 +51,20 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
   })
 
   useEffect(() => {
-    console.log('Server data:', server)
     if (server) {
       const formData = {
         name: server.name || '',
         ip_address: server.ip_address || '',
         os: server.os || '',
-        platform: server.platform || 'linux',
-        architecture: server.architecture || 'x86_64',
-        status: server.status || 'inactive',
-        region: server.region || '',
-        cpu_usage: server.cpu_usage || '0',
-        memory_usage: server.memory_usage || '0',
-        latitude: server.latitude || '0',
-        longitude: server.longitude || '0',
+        platform: (server.platform ?? 'linux').toLowerCase(),
+        architecture: (server.architecture ?? 'x86_64').toLowerCase(),
+        status: (server.status ?? 'active').toLowerCase(),
+        region: server.region ,
+        cpu_usage: server.cpu_usage ?? 0,
+        memory_usage: server.memory_usage ?? 0,
+        latitude: server.latitude ?? 0,
+        longitude: server.longitude ?? 0,
       }
-      console.log('Form data to reset:', formData)
       reset(formData as any)
     } else {
       reset({
@@ -75,7 +73,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
         os: '',
         platform: 'linux',
         architecture: 'x86_64',
-        status: 'inactive',
+        status: 'active',
         region: '',
         cpu_usage: 0,
         memory_usage: 0,
@@ -108,7 +106,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmitForm as any)} className="space-y-4" >
+    <form onSubmit={handleSubmit(onSubmitForm as any)} className="space-y-4"  >
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Name</Label>
@@ -188,16 +186,14 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             name="platform"
             control={control}
             render={({ field }) => (
-              <Select
-                defaultValue={field.value}
-                options={[
-                  { value: 'linux', label: 'Linux' },
-                  { value: 'windows', label: 'Windows' },
-                  { value: 'macos', label: 'macOS' },
-                ]}
-                placeholder="Select platform"
-                {...field}
-              />
+              <Input
+              type="text"
+              defaultValue={field.value}
+              {...field}
+              error={!!errors.platform}
+              hint={errors.platform?.message}
+              placeholder="example: linux, windows, macos, azure, gcp, aws, on-premise"
+            />
             )}
           />
         </div>
@@ -208,16 +204,14 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             name="architecture"
             control={control}
             render={({ field }) => (
-              <Select
-                defaultValue={field.value}
-                options={[
-                  { value: 'x86_64', label: 'x86_64' },
-                  { value: 'arm64', label: 'ARM64' },
-                  { value: 'i386', label: 'i386' },
-                ]}
-                placeholder="Select architecture"
-                {...field}
-              />
+              <Input
+              type="text"
+              defaultValue={field.value}
+              {...field}
+              error={!!errors.architecture}
+              hint={errors.architecture?.message}
+              placeholder="example: x86_64, arm64, i386"
+            />
             )}
           />
         </div>
@@ -227,17 +221,16 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
           <Controller
             name="status"
             control={control}
+            disabled={true}
             render={({ field }) => (
-              <Select
-                defaultValue={field.value}
-                options={[
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                  { value: 'maintenance', label: 'Maintenance' },
-                ]}
-                placeholder="Select status"
-                {...field}
-              />
+              <Input
+              type="text"
+              defaultValue={field.value}
+              {...field}
+              error={!!errors.status}
+              hint={errors.status?.message}
+            
+            />
             )}
           />
         </div>
@@ -283,10 +276,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
                 type="number"
-                step={0.000001}
-
-                defaultValue={field.value}
-                {...field}
+                value={field.value ?? ''}
+                onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="Latitude"
               />
             )}
@@ -300,9 +291,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
                 type="number"
-                step={0.000001}
-                {...field}
-                defaultValue={field.value}
+                value={field.value ?? ''}
+                onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="Longitude"
               />
             )}
