@@ -34,8 +34,8 @@ export interface Server {
 export interface ServerActivity {
     id: string
     server_id: string
-    type: 'start' | 'stop' | 'restart' | 'update'
-    status: 'success' | 'failed'
+    type: 'start' | 'stop' | 'restart' | 'update' | 'delete' | 'created' | 'maintenance'
+    status: 'success' | 'failed' | 'offline' | "removed"
     message: string
     created_at: string
 }
@@ -52,6 +52,10 @@ export interface ServerStats {
     platformCounts: Record<ServerPlatform, number>
     countryCounts: Record<string, number>
     timeRangeStats: TimeRangeStats
+    archCounts: Record<string, number>
+    newServersCount?: number
+    filterStart?: Date
+    filterEnd?: Date
 }
 
 export type Database = {

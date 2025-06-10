@@ -36,7 +36,7 @@ export default function ServerMap({ servers }: ServerMapProps) {
   const center = grouped.length > 0 ? [grouped[0].lat, grouped[0].lng] : [20, 0];
 
   return (
-    <div style={{ width: '100%', height: 500 }}>
+    <div style={{ width: '100%', height: 350 }}>
       <MapContainer center={center as [number, number]} zoom={2} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

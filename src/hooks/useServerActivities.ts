@@ -10,18 +10,22 @@ export function useServerActivities(serverId?: string) {
     useEffect(() => {
         if (serverId) {
             fetchActivities(serverId)
+        } else {
+            fetchActivities()
         }
     }, [serverId])
 
-    const fetchActivities = async (id: string) => {
+    const fetchActivities = async (id?: string) => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
+            let query = supabase
                 .from('server_activities')
                 .select('*')
-                .eq('server_id', id)
                 .order('created_at', { ascending: false })
-
+            if (id) {
+                query = query.eq('server_id', id)
+            }
+            const { data, error } = await query
             if (error) throw error
             setActivities(data || [])
         } catch (err) {

@@ -4,7 +4,7 @@ import { vi } from 'date-fns/locale'
 
 export function formatDate(
     date: string | Date,
-    formatText: "date" | "time" | "datetime" | "year_month_date" | (string & {}) = "date"
+    formatText: "date" | "time" | "datetime" | "year_month_date" | "date_hour_second" | (string & {}) = "date"
 ): string {
     let formatString;
     switch (formatText) {
@@ -14,6 +14,10 @@ export function formatDate(
         }
         case "time": {
             formatString = "HH:mm";
+            break;
+        }
+        case "date_hour_second": {
+            formatString = "dd-MM-yyyy HH:mm:ss";
             break;
         }
         case "datetime": {

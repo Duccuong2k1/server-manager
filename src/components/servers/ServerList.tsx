@@ -1,25 +1,23 @@
-'use client'
-
-import { useState } from 'react'
-import { useServers } from '@/hooks/useServers'
-import { MoreDotIcon } from '@/icons'
-import Button from '@/components/ui/button/Button'
+"use client"
 import Badge from '@/components/ui/badge/Badge'
+import Button from '@/components/ui/button/Button'
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
   TableCell,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
-import SkeletonTable from '../common/SkeletonTable'
-import ServerModal from './ServerModal'
-import ServerActions from './ServerActions'
-import { Server } from '@/lib/supabase/types'
+import { useServerActivities } from '@/hooks/useServerActivities'
+import { useServers } from '@/hooks/useServers'
 import { formatDate } from '@/lib/helpers/parser'
+import { Server } from '@/lib/supabase/types'
+import { useState } from 'react'
 import Pagination from '../common/Pagination'
-import { Modal } from '@/components/ui/modal'
+import SkeletonTable from '../common/SkeletonTable'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
+import ServerActions from './ServerActions'
+import ServerModal from './ServerModal'
 
 const statusColors = {
   active: 'success',
@@ -30,81 +28,104 @@ const statusColors = {
 export default function ServerList() {
   const pageSize = 10
   const {
-    servers,
-    loading,
-    error,
-    total,
-    currentPage,
-    setCurrentPage,
-    addServer,
-    updateServer,
-    deleteServer,
-    refreshServers
+    servers, loading, error, total,
+    currentPage, setCurrentPage,
+    addServer, updateServer, deleteServer, refreshServers
   } = useServers(1, pageSize)
   const [selectedServer, setSelectedServer] = useState<Server | undefined>()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const totalPages = Math.ceil(total / pageSize)
   const [deleteTarget, setDeleteTarget] = useState<Server | undefined>()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [actionOpenId, setActionOpenId] = useState<string | undefined>()
+  const { addActivity } = useServerActivities()
+  const totalPages = Math.ceil(total / pageSize)
 
-  const handleCreateServer = () => {
-    setSelectedServer(undefined)
-    setIsModalOpen(true)
-  }
-
-  const handleEditServer = (server: Server) => {
-    setSelectedServer(server)
-    setIsModalOpen(true)
-  }
-
-  const handleDeleteServer = async (server: Server) => {
-    setDeleteTarget(server)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteTarget) {
-      await deleteServer(deleteTarget.id)
+  // Xử lý tạo hoặc cập nhật server
+  const handleSaveServer = async (data: any) => {
+    try {
+      if (selectedServer) {
+        await updateServer(selectedServer.id, data)
+        await addActivity({
+          server_id: selectedServer.id,
+          type: 'update',
+          status: 'success',
+          message: `Updated server ${selectedServer.name}`,
+        })
+      } else {
+        const newServer = await addServer(data)
+        await addActivity({
+          server_id: newServer.id,
+          type: 'created',
+          status: 'success',
+          message: `Created server ${newServer.name}`,
+        })
+      }
+      setIsModalOpen(false)
       refreshServers()
-      setShowDeleteModal(false)
-      setDeleteTarget(undefined)
+    } catch (err) {
+      await addActivity({
+        server_id: selectedServer?.id ?? '',
+        type: selectedServer ? 'update' : 'created',
+        status: 'failed',
+        message: `Failed to ${selectedServer ? 'update' : 'created'} server`,
+      })
     }
   }
 
-  const cancelDelete = () => {
-    setShowDeleteModal(false)
-    setDeleteTarget(undefined)
+  // Xử lý xóa server
+  const confirmDelete = async () => {
+    if (deleteTarget) {
+      try {
+        await deleteServer(deleteTarget.id)
+        await addActivity({
+          server_id: deleteTarget.id,
+          type: 'delete',
+          status: 'removed',
+          message: `Deleted server ${deleteTarget.name}`,
+        })
+        refreshServers()
+      } catch (err) {
+        await addActivity({
+          server_id: deleteTarget.id,
+          type: 'delete',
+          status: 'removed',
+          message: `Failed to delete server ${deleteTarget.name}`,
+        })
+      } finally {
+        setShowDeleteModal(false)
+        setDeleteTarget(undefined)
+      }
+    }
   }
 
-  const handleChangeStatus = async (server: Server, status: Server['status']) => {
+  // Xử lý đổi trạng thái server
+const handleChangeStatus = async (server: Server, status: Server['status']) => {
+  try {
     await updateServer(server.id, { ...server, status })
+    await addActivity({
+      server_id: server.id,
+      type: status === 'maintenance' ? 'maintenance' : 'update',
+      status: status === 'maintenance' ? 'offline' : 'success',
+      message: status === 'maintenance'
+        ? `Changed status to maintenance (offline)`
+        : `Changed status to ${status}`,
+    })
     refreshServers()
+  } catch (err) {
+    await addActivity({
+      server_id: server.id,
+      type: 'update',
+      status: 'failed',
+      message: `Failed to change status to ${status}`,
+    })
   }
+}
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
       <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Server List</h3>
-        <Button
-          onClick={handleCreateServer}
-          startIcon={
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          }
-        >
+        <Button onClick={() => { setSelectedServer(undefined); setIsModalOpen(true) }}>
           Add Server
         </Button>
       </div>
@@ -113,7 +134,7 @@ export default function ServerList() {
           <TableHeader className="border-gray-100 dark:border-gray-800 border-y">
             <TableRow>
               <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Name (IP Address)</TableCell>
-              <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Region</TableCell>
+              <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Country</TableCell>
               <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">OS</TableCell>
               <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Platform</TableCell>
               <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Architecture</TableCell>
@@ -139,7 +160,7 @@ export default function ServerList() {
                     <p className="text-gray-500 dark:text-gray-400 text-theme-xs">{server.ip_address}</p>
                   </div>
                 </TableCell>
-                <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">{server.region}</TableCell>
+                <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">{server.country}</TableCell>
                 <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">{server.os}</TableCell>
                 <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">{server.platform}</TableCell>
                 <TableCell className="py-3 text-gray-900 dark:text-white text-theme-sm">{server.architecture}</TableCell>
@@ -152,8 +173,8 @@ export default function ServerList() {
                 <TableCell className="py-3 text-end">
                   <ServerActions
                     server={server}
-                    onEdit={handleEditServer}
-                    onDelete={handleDeleteServer}
+                    onEdit={(srv) => { setSelectedServer(srv); setIsModalOpen(true) }}
+                    onDelete={(srv) => { setDeleteTarget(srv); setShowDeleteModal(true) }}
                     onChangeStatus={handleChangeStatus}
                     direction={index >= servers.length - 3 ? 'up' : 'down'}
                     isOpen={actionOpenId === server.id}
@@ -164,7 +185,7 @@ export default function ServerList() {
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">No servers found</TableCell>
+                <TableCell colSpan={8} className="text-center">No servers found</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -182,22 +203,14 @@ export default function ServerList() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         server={selectedServer}
-        onSave={async (data) => {
-          if (selectedServer) {
-            await updateServer(selectedServer.id, data)
-          } else {
-            await addServer(data)
-          }
-          setIsModalOpen(false)
-          refreshServers()
-        }}
+        onSave={handleSaveServer}
       />
       <ConfirmDeleteModal
         isOpen={showDeleteModal}
-        onClose={cancelDelete}
+        onClose={() => { setShowDeleteModal(false); setDeleteTarget(undefined) }}
         onConfirm={confirmDelete}
         serverName={deleteTarget?.name}
       />
     </div>
   )
-} 
+}

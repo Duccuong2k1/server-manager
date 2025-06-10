@@ -1,13 +1,13 @@
-import { useForm, Controller, SubmitHandler } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { Server } from '@/lib/supabase/types'
-import Button from '@/components/ui/button/Button'
 import Input from '@/components/form/input/InputField'
 import Label from '@/components/form/Label'
 import Select from '@/components/form/Select'
+import Button from '@/components/ui/button/Button'
 import { useServers } from '@/hooks/useServers'
+import { Server } from '@/lib/supabase/types'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
+import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 const serverSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -16,7 +16,7 @@ const serverSchema = z.object({
   platform: z.string().min(1, 'Platform is required'),
   architecture: z.string().min(1, 'Architecture is required'),
   status: z.enum(['active', 'inactive', 'maintenance'] as const),
-  region: z.string().min(1, 'Region is required'),
+  country: z.string().min(1, 'Country is required'),
   cpu_usage:  z.coerce.number().default(0).optional(),
   memory_usage: z.coerce.number().default(0).optional(),
   latitude: z.any().optional(),
@@ -42,7 +42,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
       platform: 'linux',
       architecture: 'x86_64',
       status: 'active',
-      region: '',
+      country: '',
       cpu_usage: 0,
       memory_usage: 0,
       latitude: 0,
@@ -59,7 +59,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
         platform: (server.platform ?? 'linux').toLowerCase(),
         architecture: (server.architecture ?? 'x86_64').toLowerCase(),
         status: (server.status ?? 'active').toLowerCase(),
-        region: server.region ,
+        country: server.country ,
         cpu_usage: server.cpu_usage ?? 0,
         memory_usage: server.memory_usage ?? 0,
         latitude: server.latitude ?? 0,
@@ -74,7 +74,7 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
         platform: 'linux',
         architecture: 'x86_64',
         status: 'active',
-        region: '',
+        country: '',
         cpu_usage: 0,
         memory_usage: 0,
         latitude: 0,
@@ -145,18 +145,18 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
         </div>
 
         <div>
-          <Label>Region</Label>
+          <Label>Country</Label>
           <Controller
-            name="region"
+            name="country"
             control={control}
             render={({ field }) => (
               <Input
                 type="text"
                 defaultValue={field.value}
                 {...field}
-                error={!!errors.region}
-                hint={errors.region?.message}
-                placeholder="Enter region"
+                error={!!errors.country}
+                hint={errors.country?.message}
+                placeholder="Enter country"
               />
             )}
           />
@@ -188,8 +188,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
               type="text"
-              defaultValue={field.value}
-              {...field}
+                value={field.value ?? ''}
+      onChange={field.onChange}
               error={!!errors.platform}
               hint={errors.platform?.message}
               placeholder="example: linux, windows, macos, azure, gcp, aws, on-premise"
@@ -216,24 +216,25 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
           />
         </div>
 
-        <div>
+       {!server && <div>
           <Label>Status</Label>
           <Controller
             name="status"
             control={control}
-            disabled={true}
             render={({ field }) => (
-              <Input
-              type="text"
-              defaultValue={field.value}
+              <Select
+              options={[
+                { label: 'Active', value: 'active' },
+                { label: 'Inactive', value: 'inactive' },
+                { label: 'Maintenance', value: 'maintenance' }
+              ]}
+              placeholder="Select status"
               {...field}
-              error={!!errors.status}
-              hint={errors.status?.message}
-            
-            />
+                
+              />
             )}
           />
-        </div>
+        </div>}
 
         <div>
           <Label>CPU Usage (%)</Label>
@@ -243,8 +244,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
                 type="number"
-                defaultValue={field.value}  
-                {...field}
+              value={field.value ?? ''}
+onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                 error={!!errors.cpu_usage}
                 hint={errors.cpu_usage?.message}
                 placeholder="Enter CPU usage"
@@ -261,8 +262,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
                 type="number"
-                defaultValue={field.value}
-                {...field}
+              value={field.value ?? ''}
+onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="Memory Usage"
               />
             )}
