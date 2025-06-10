@@ -1,11 +1,12 @@
 "use client"
 import { useServers } from '@/hooks/useServers'
 import React from 'react'
-import ServerMap from '../common/ServerMap'
 
-type Props = {}
+import dynamic from "next/dynamic";
 
-export default function ServerMapBox({}: Props) {
+const ServerMap = dynamic(() => import("../common/ServerMap"), { ssr: false });
+
+export default function ServerMapBox() {
 
   
   const { servers } = useServers(1, 1000)

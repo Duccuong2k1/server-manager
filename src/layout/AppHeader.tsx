@@ -2,7 +2,6 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -12,11 +11,13 @@ const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   const handleToggle = () => {
+    if (typeof window !== "undefined") {
     if (window.innerWidth >= 1024) {
       toggleSidebar();
     } else {
       toggleMobileSidebar();
     }
+  }
   };
 
   const toggleApplicationMenu = () => {

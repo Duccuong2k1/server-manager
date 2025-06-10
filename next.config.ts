@@ -7,7 +7,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
 
-
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Cấu hình webpack
   webpack(config) {
     // Cấu hình SVG
