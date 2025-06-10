@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useServerStats, TimeRangeType } from '@/hooks/useServerStats';
 import ComponentCard from '../common/ComponentCard';
 import SkeletonBox from '../common/SkeletonBox';
+import DatePicker from '../form/date-picker';
 
 export type TimeRangeTypeUI = '24h' | '7d' | '30d' | 'custom' | { start: Date, end: Date };
 
@@ -111,7 +112,7 @@ export default function ServerStatistics() {
         ))}
         {timeRange === 'custom' && (
           <>
-            <input
+            {/* <input
               type="date"
               value={customStart}
               onChange={e => setCustomStart(e.target.value)}
@@ -123,7 +124,9 @@ export default function ServerStatistics() {
               value={customEnd}
               onChange={e => setCustomEnd(e.target.value)}
               className="border rounded px-2 py-1"
-            />
+            /> */} 
+            <DatePicker defaultDate={""} label='Start date' id='startDate'   onChange={(dates, currentDateString) => setCustomStart(currentDateString)}/>
+            <DatePicker defaultDate={""} label='End date' id='endDate'  onChange={(dates, currentDateString) => setCustomEnd(currentDateString)}/>
           </>
         )}
       </div>
