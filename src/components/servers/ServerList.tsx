@@ -40,7 +40,7 @@ export default function ServerList() {
   const { addActivity } = useServerActivities()
   const totalPages = Math.ceil(total / pageSize)
 
-  // Xử lý tạo hoặc cập nhật server
+
   const handleSaveServer = async (data: any) => {
     try {
       if (selectedServer) {
@@ -72,33 +72,38 @@ export default function ServerList() {
     }
   }
 
-  // Xử lý xóa server
+
   const confirmDelete = async () => {
-    if (deleteTarget) {
-      try {
-        await deleteServer(deleteTarget.id)
-        await addActivity({
-          server_id: deleteTarget.id,
-          type: 'delete',
-          status: 'removed',
-          message: `Deleted server ${deleteTarget.name}`,
-        })
-        refreshServers()
-      } catch (err) {
-        await addActivity({
-          server_id: deleteTarget.id,
-          type: 'delete',
-          status: 'removed',
-          message: `Failed to delete server ${deleteTarget.name}`,
-        })
-      } finally {
-        setShowDeleteModal(false)
-        setDeleteTarget(undefined)
-      }
+    if (!deleteTarget) return;
+
+    const serverToDelete = { ...deleteTarget }; // Lưu thông tin server trước khi xóa
+    
+    try {
+  
+      await addActivity({
+        server_id: deleteTarget.id,
+        type: 'delete',
+        status: 'success',
+        message: `Successfully deleted server ${serverToDelete.name}`,
+      });
+
+  
+      await deleteServer(deleteTarget.id);
+      refreshServers();
+    } catch (err) {
+      await addActivity({
+        server_id: deleteTarget.id,
+        type: 'delete',
+        status: 'failed',
+        message: `Failed to delete server ${serverToDelete.name}`,
+      });
+    } finally {
+      setShowDeleteModal(false);
+      setDeleteTarget(undefined);
     }
   }
 
-  // Xử lý đổi trạng thái server
+
 const handleChangeStatus = async (server: Server, status: Server['status']) => {
   try {
     await updateServer(server.id, { ...server, status })

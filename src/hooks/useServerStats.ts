@@ -19,7 +19,7 @@ export function useServerStats(timeRange?: TimeRangeType) {
         try {
             setLoading(true)
 
-            // Get total servers count (không phụ thuộc timeRange)
+            // Get total servers count 
             const { count: totalServers, error: countError } = await supabase
                 .from('servers')
                 .select('*', { count: 'exact', head: true })
@@ -52,7 +52,7 @@ export function useServerStats(timeRange?: TimeRangeType) {
                 return acc
             }, {} as Record<string, number>)
 
-            // Get servers by country
+            // Get servers by country with count
             const { data: countryData, error: countryError } = await supabase
                 .from('servers')
                 .select('country')
@@ -64,6 +64,13 @@ export function useServerStats(timeRange?: TimeRangeType) {
                 acc[country] = (acc[country] || 0) + 1
                 return acc
             }, {} as Record<string, number>)
+
+            // Calculate country percentages
+            const countryStats = Object.entries(countryCounts).map(([country, count]) => ({
+                country,
+                count,
+                percentage: Math.round((count / (totalServers || 0)) * 100)
+            })).sort((a, b) => b.count - a.count);
 
             // Get servers by architecture
             const { data: archData, error: archError } = await supabase
@@ -130,6 +137,7 @@ export function useServerStats(timeRange?: TimeRangeType) {
                 statusCounts,
                 platformCounts,
                 countryCounts,
+                countryStats,
                 timeRangeStats,
                 archCounts,
                 newServersCount,

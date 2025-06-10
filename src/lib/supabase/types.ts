@@ -51,6 +51,11 @@ export interface ServerStats {
     statusCounts: Record<ServerStatus, number>
     platformCounts: Record<ServerPlatform, number>
     countryCounts: Record<string, number>
+    countryStats: Array<{
+        country: string
+        count: number
+        percentage: number
+    }>
     timeRangeStats: TimeRangeStats
     archCounts: Record<string, number>
     newServersCount?: number

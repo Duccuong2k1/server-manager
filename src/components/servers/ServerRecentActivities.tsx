@@ -13,7 +13,7 @@ const statusColors = {
   Rebooting: 'info',
   Warning: 'warning',
   Removed: 'error',
-  Offline:"error",
+  offline:"error",
   created: 'success',
   network: 'info',
   update: 'info',
@@ -21,7 +21,8 @@ const statusColors = {
   alert: 'error',
   migrate: 'info',
   system:"info",
-  delete:"error"
+  delete:"error",
+  maintenance:"warning"
 } as const
 
 
