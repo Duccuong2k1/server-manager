@@ -64,7 +64,7 @@ export default function ServerStatistics() {
       <div className="text-3xl font-bold text-green-600">{stats?.newServersCount ?? 0}</div>
       {stats?.filterStart && stats?.filterEnd && (
         <div className="text-xs text-gray-500 mt-1">
-          {`Từ ${formatDate(stats.filterStart , "datetime")} đến ${formatDate(stats.filterEnd, "datetime")}`}
+          {`Từ ${formatDate(stats.filterStart , "date")} đến ${formatDate(stats.filterEnd, "date")}`}
         </div>
       )}
     </>

@@ -244,8 +244,8 @@ export default function ServerForm({ server, onClose, onSave }: ServerFormProps)
             render={({ field }) => (
               <Input
                 type="number"
-              value={field.value ?? ''}
-onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                value={field.value ?? ''}
+                onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                 error={!!errors.cpu_usage}
                 hint={errors.cpu_usage?.message}
                 placeholder="Enter CPU usage"

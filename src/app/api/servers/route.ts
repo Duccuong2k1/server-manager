@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
-    // Lấy tổng số server
+
     const { count, error: countError } = await supabase
         .from('servers')
         .select('*', { count: 'exact', head: true })
