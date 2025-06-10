@@ -1,11 +1,13 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useServerStats, TimeRangeType } from '@/hooks/useServerStats';
 import ComponentCard from '../common/ComponentCard';
 import SkeletonBox from '../common/SkeletonBox';
 import DatePicker from '../form/date-picker';
+import { formatDate } from '@/lib/helpers/parser';
 
-export type TimeRangeTypeUI = '24h' | '7d' | '30d' | 'custom' | { start: Date, end: Date };
+
+export type TimeRangeTypeUI = '24h' | '7d' | '30d' | 'custom';
 
 const getTop = (counts: Record<string, number>, top = 3) => {
   return Object.entries(counts || {})
@@ -22,24 +24,33 @@ const timeOptions = [
 
 export default function ServerStatistics() {
   const [timeRange, setTimeRange] = useState<TimeRangeTypeUI>('24h');
-  const [customStart, setCustomStart] = useState<string>('');
-  const [customEnd, setCustomEnd] = useState<string>('');
+  const [customStart, setCustomStart] = useState<Date | null>(null);
+  const [customEnd, setCustomEnd] = useState<Date | null>(null);
 
-  let effectiveTimeRange: TimeRangeType = '24h';
-  if (typeof timeRange === 'string' && timeRange !== 'custom') {
-    effectiveTimeRange = timeRange;
-  } else if (timeRange === 'custom' && customStart && customEnd) {
-    effectiveTimeRange = {
-      start: new Date(customStart),
-      end: new Date(customEnd),
-    };
-  }
+
+  const effectiveTimeRange = React.useMemo<TimeRangeType>(() => {
+    if (timeRange === 'custom' && customStart && customEnd) {
+      return {
+        start: customStart,
+        end: customEnd
+      };
+    }
+    return timeRange as TimeRangeType;
+  }, [timeRange, customStart, customEnd]);
 
   const { stats, loading, error } = useServerStats(effectiveTimeRange);
 
+  
+  useEffect(() => {
+    if (timeRange !== 'custom') {
+      setCustomStart(null);
+      setCustomEnd(null);
+    }
+  }, [timeRange]);
+
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
-  // Tách từng phần hiển thị ra biến riêng để tối ưu
+
   const totalServersBox = loading ? (
     <SkeletonBox />
   ) : (
@@ -53,7 +64,7 @@ export default function ServerStatistics() {
       <div className="text-3xl font-bold text-green-600">{stats?.newServersCount ?? 0}</div>
       {stats?.filterStart && stats?.filterEnd && (
         <div className="text-xs text-gray-500 mt-1">
-          {`Từ ${stats.filterStart.toLocaleDateString?.() || stats.filterStart} đến ${stats.filterEnd.toLocaleDateString?.() || stats.filterEnd}`}
+          {`Từ ${formatDate(stats.filterStart , "datetime")} đến ${formatDate(stats.filterEnd, "datetime")}`}
         </div>
       )}
     </>
@@ -104,30 +115,41 @@ export default function ServerStatistics() {
         {timeOptions.map(opt => (
           <button
             key={opt.value}
-            className={`px-3 py-1 rounded border ${timeRange === opt.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300'} transition`}
+            className={`px-3 py-1 rounded border ${
+              timeRange === opt.value 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            } transition`}
             onClick={() => setTimeRange(opt.value as TimeRangeTypeUI)}
           >
             {opt.label}
           </button>
         ))}
         {timeRange === 'custom' && (
-          <>
-            {/* <input
-              type="date"
-              value={customStart}
-              onChange={e => setCustomStart(e.target.value)}
-              className="border rounded px-2 py-1 ml-2"
+          <div className="flex gap-4">
+            <DatePicker
+              label="Start date"
+              id="startDate"
+              defaultDate={customStart ? formatDate(customStart, "datetime") : ''}
+              onChange={(dates, dateString) => {
+                const date = dateString ? new Date(dateString) : null;
+                setCustomStart(date);
+             
+                if (customEnd && date && customEnd < date) {
+                  setCustomEnd(null);
+                }
+              }}
             />
-            <span className="mx-1">-</span>
-            <input
-              type="date"
-              value={customEnd}
-              onChange={e => setCustomEnd(e.target.value)}
-              className="border rounded px-2 py-1"
-            /> */} 
-            <DatePicker defaultDate={""} label='Start date' id='startDate'   onChange={(dates, currentDateString) => setCustomStart(currentDateString)}/>
-            <DatePicker defaultDate={""} label='End date' id='endDate'  onChange={(dates, currentDateString) => setCustomEnd(currentDateString)}/>
-          </>
+            <DatePicker
+              label="End date"
+              id="endDate"
+              defaultDate={customEnd ? formatDate(customEnd, "datetime") : ''}
+              onChange={(dates, dateString) => {
+                const date = dateString ? new Date(dateString) : null;
+                setCustomEnd(date);
+              }}
+            />
+          </div>
         )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
