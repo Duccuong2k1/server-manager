@@ -5,6 +5,7 @@ import React, { useCallback } from "react";
 import { useSidebar } from "../context/SidebarContext";
 import {
   GridIcon,
+  GroupIcon,
   HorizontaLDots,
   UserCircleIcon
 } from "../icons/index";
@@ -21,6 +22,11 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/",
+  },
+  {
+    icon: <GroupIcon />,
+    name: "Servers",
+    path: "/servers",
   },
   {
     icon: <UserCircleIcon />,
@@ -86,7 +92,7 @@ const AppSidebar: React.FC = () => {
         }`}
       >
         <Link href="/" className="text-black font-semibold dark:text-white uppercase">
-          Admin Dashboard
+          {isExpanded ? "Server Manager" : "SM"}
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
