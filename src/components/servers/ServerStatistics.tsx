@@ -4,7 +4,7 @@ import { useServerStats, TimeRangeType } from '@/hooks/useServerStats';
 import ComponentCard from '../common/ComponentCard';
 import SkeletonBox from '../common/SkeletonBox';
 import DatePicker from '../form/date-picker';
-import { formatDate } from '@/lib/helpers/parser';
+import { formatDate, formatDateISO } from '@/lib/helpers/parser';
 
 
 export type TimeRangeTypeUI = '24h' | '7d' | '30d' | 'custom';
@@ -21,6 +21,8 @@ const timeOptions = [
   { label: 'Last month', value: '30d' },
   { label: 'Custom', value: 'custom' },
 ];
+
+
 
 export default function ServerStatistics() {
   const [timeRange, setTimeRange] = useState<TimeRangeTypeUI>('24h');
@@ -130,7 +132,7 @@ export default function ServerStatistics() {
             <DatePicker
               label="Start date"
               id="startDate"
-              defaultDate={customStart ? formatDate(customStart, "datetime") : ''}
+               value={formatDateISO(customStart)}
               onChange={(dates, dateString) => {
                 const date = dateString ? new Date(dateString) : null;
                 setCustomStart(date);
@@ -143,7 +145,7 @@ export default function ServerStatistics() {
             <DatePicker
               label="End date"
               id="endDate"
-              defaultDate={customEnd ? formatDate(customEnd, "datetime") : ''}
+                value={formatDateISO(customEnd)}
               onChange={(dates, dateString) => {
                 const date = dateString ? new Date(dateString) : null;
                 setCustomEnd(date);
