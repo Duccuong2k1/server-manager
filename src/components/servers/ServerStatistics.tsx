@@ -1,11 +1,15 @@
 "use client"
-import React, { useState, useEffect } from 'react';
-import { useServerStats, TimeRangeType } from '@/hooks/useServerStats';
-import ComponentCard from '../common/ComponentCard';
-import SkeletonBox from '../common/SkeletonBox';
-import DatePicker from '../form/date-picker';
-import { formatDate, formatDateISO } from '@/lib/helpers/parser';
+import { TimeRangeType, useServerStats } from '@/hooks/useServerStats';
+import React, { useMemo, useState } from 'react';
 
+import { formatDate } from '@/lib/helpers/parser';
+
+
+import { FaApple, FaDesktop, FaLinux, FaServer, FaWindows } from 'react-icons/fa';
+import { SiArchlinux } from 'react-icons/si';
+import AnalyticsChart from './components/AnaliticsChart';
+import StatsGrid from './components/StatGrid';
+import TimeRangeFilter from './components/TimeRangeFilter';
 
 export type TimeRangeTypeUI = '24h' | '7d' | '30d' | 'custom';
 
@@ -15,13 +19,78 @@ const getTop = (counts: Record<string, number>, top = 3) => {
     .slice(0, top);
 };
 
-const timeOptions = [
-  { label: 'Last 24 hours', value: '24h' },
-  { label: 'Last week', value: '7d' },
-  { label: 'Last month', value: '30d' },
-  { label: 'Custom', value: 'custom' },
-];
 
+  
+const mapPlatformIcon = (platform: string) => {
+  switch (platform.toLowerCase()) {
+    case 'linux':
+      return <FaLinux className="w-3 h-3 text-gray-400" />;
+    case 'windows':
+      return <FaWindows className="w-3 h-3 text-gray-400" />;
+    case 'macos':
+      return <FaApple className="w-3 h-3 text-gray-400" />;
+    default:
+      return <FaDesktop className="w-3 h-3 text-gray-400" />;
+  }
+};
+
+  const createPlatformStats = (stats:any) => {
+
+
+  return [
+   {
+      title: 'Tổng số lượng máy chủ',
+      value: stats?.totalServers ?? 0,
+      change: '+0%',
+      changeType: 'increase' as const,
+      icon: <FaServer className="w-6 h-6 text-gray-400" />,
+    },
+    {
+      title: 'Số lượng máy chủ mới',
+      value: stats?.newServersCount ?? 0,
+      change: `${stats?.filterStart && stats?.filterEnd ? 
+        `${formatDate(stats.filterStart, "date")} - ${formatDate(stats.filterEnd, "date")}` : ''}`,
+      changeType: 'increase' as const,
+      icon: <FaServer className="w-6 h-6 text-green-400" />,
+    },
+    {
+      title: 'Top nền tảng (Platform)',
+      value: '',
+      change: '',
+      changeType: 'increase' as const,
+      listItems: getTop(stats?.platformCounts ?? {}).map(([platform, count]) => ({
+        label: platform,
+        value: count,
+        percentage: Math.round((count / (stats?.totalServers || 1)) * 100),
+        icon: mapPlatformIcon(platform),
+      })),
+    },
+    {
+      title: 'Top hệ điều hành (OS)',
+      value: '',
+      change: '',
+      changeType: 'increase' as const,
+      listItems: getTop(stats?.countryCounts ?? {}).map(([os, count]) => ({
+        label: os,
+        value: count,
+        percentage: Math.round((count / (stats?.totalServers || 1)) * 100),
+        icon: <FaDesktop className="w-3 h-3 text-gray-400" />,
+      })),
+    },
+    {
+      title: 'Top kiến trúc (Arch)',
+      value: '',
+      change: '',
+      changeType: 'increase' as const,
+      listItems: getTop(stats?.archCounts ?? {}).map(([arch, count]) => ({
+        label: arch,
+        value: count,
+        percentage: Math.round((count / (stats?.totalServers || 1)) * 100),
+        icon: <SiArchlinux className="w-3 h-3 text-gray-400" />,
+      })),
+    },
+  ];
+};
 
 
 export default function ServerStatistics() {
@@ -29,148 +98,35 @@ export default function ServerStatistics() {
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
 
-
   const effectiveTimeRange = React.useMemo<TimeRangeType>(() => {
     if (timeRange === 'custom' && customStart && customEnd) {
-      return {
-        start: customStart,
-        end: customEnd
-      };
+      return { start: customStart, end: customEnd };
     }
     return timeRange as TimeRangeType;
   }, [timeRange, customStart, customEnd]);
 
   const { stats, loading, error } = useServerStats(effectiveTimeRange);
-
-  
-  useEffect(() => {
-    if (timeRange !== 'custom') {
-      setCustomStart(null);
-      setCustomEnd(null);
-    }
-  }, [timeRange]);
-
+  const platformStats = useMemo(() => createPlatformStats(stats), [stats]);
   if (error) return <div className="text-red-500">Error: {error}</div>;
-
-
-  const totalServersBox = loading ? (
-    <SkeletonBox />
-  ) : (
-    <div className="text-3xl font-bold text-blue-600">{stats?.totalServers ?? 0}</div>
-  );
-
-  const newServersBox = loading ? (
-    <SkeletonBox />
-  ) : (
-    <>
-      <div className="text-3xl font-bold text-green-600">{stats?.newServersCount ?? 0}</div>
-      {stats?.filterStart && stats?.filterEnd && (
-        <div className="text-xs text-gray-500 mt-1">
-          {`Từ ${formatDate(stats.filterStart , "date")} đến ${formatDate(stats.filterEnd, "date")}`}
-        </div>
-      )}
-    </>
-  );
-
-  const topPlatformBox = loading ? (
-    <SkeletonBox />
-  ) : (
-    <ul>
-      {getTop(stats?.platformCounts ?? {}, 3).map(([platform, count]) => (
-        <li key={platform} className="flex justify-between text-gray-900 dark:text-white">
-          <span>{platform}</span>
-          <span className="font-semibold">{count}</span>
-        </li>
-      ))}
-    </ul>
-  );
-
-  const topOSBox = loading ? (
-    <SkeletonBox />
-  ) : (
-    <ul>
-      {getTop(stats?.countryCounts ?? {}, 3).map(([os, count]) => (
-        <li key={os} className="flex justify-between text-gray-900 dark:text-white">
-          <span>{os}</span>
-          <span className="font-semibold">{count}</span>
-        </li>
-      ))}
-    </ul>
-  );
-
-  const topArchBox = loading ? (
-    <SkeletonBox />
-  ) : (
-    <ul>
-      {getTop(stats?.archCounts ?? {}, 3).map(([arch, count]) => (
-        <li key={arch} className="flex justify-between text-gray-900 dark:text-white">
-          <span>{arch}</span>
-          <span className="font-semibold">{count}</span>
-        </li>
-      ))}
-    </ul>
-  );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 items-end">
-        {timeOptions.map(opt => (
-          <button
-            key={opt.value}
-            className={`px-3 py-1 rounded border ${
-              timeRange === opt.value 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            } transition`}
-            onClick={() => setTimeRange(opt.value as TimeRangeTypeUI)}
-          >
-            {opt.label}
-          </button>
-        ))}
-        {timeRange === 'custom' && (
-          <div className="flex gap-4">
-            <DatePicker
-              label="Start date"
-              id="startDate"
-               value={formatDateISO(customStart)}
-              onChange={(dates, dateString) => {
-                const date = dateString ? new Date(dateString) : null;
-                setCustomStart(date);
-             
-                if (customEnd && date && customEnd < date) {
-                  setCustomEnd(null);
-                }
-              }}
-            />
-            <DatePicker
-              label="End date"
-              id="endDate"
-                value={formatDateISO(customEnd)}
-              onChange={(dates, dateString) => {
-                const date = dateString ? new Date(dateString) : null;
-                setCustomEnd(date);
-              }}
-            />
-          </div>
-        )}
+     
+       <TimeRangeFilter
+          activeTimeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          customStart={customStart}
+          customEnd={customEnd}
+          onCustomStartChange={setCustomStart}
+          onCustomEndChange={setCustomEnd}
+        />
+      
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-        <ComponentCard title="Tổng số lượng máy chủ">
-          {totalServersBox}
-        </ComponentCard>
-        <ComponentCard title="Số lượng máy chủ mới">
-          {newServersBox}
-        </ComponentCard>
-        <ComponentCard title="Top nền tảng (Platform)">
-          {topPlatformBox}
-        </ComponentCard>
-        <ComponentCard title="Top hệ điều hành (OS)">
-          {topOSBox}
-        </ComponentCard>
-        <ComponentCard title="Top kiến trúc hệ thống (Arch)">
-          {topArchBox}
-        </ComponentCard>
-      </div>
+        <StatsGrid stats={platformStats}  />
+    
+
+        <AnalyticsChart stats={stats} loading={loading}/>
     </div>
   );
 }
