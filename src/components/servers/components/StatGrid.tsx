@@ -6,9 +6,9 @@ interface StatsGridProps {
   columns?: number;
 }
 
-const StatsGrid: React.FC<StatsGridProps> = ({ stats, columns = 5 }) => {
+const StatsGrid: React.FC<StatsGridProps> = ({ stats, columns = 4 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
       {stats.map((stat, index) => (
         <motion.div
           key={index}
