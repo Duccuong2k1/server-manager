@@ -58,6 +58,7 @@ export interface ServerStats {
     }>
     timeRangeStats: TimeRangeStats
     archCounts: Record<string, number>
+    osCounts: Record<string, number>
     newServersCount?: number
     filterStart?: Date
     filterEnd?: Date

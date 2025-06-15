@@ -2,9 +2,9 @@ import React from 'react'
 
 
 
-function SkeletonBox() {
+function SkeletonBox({height = 16, width = 96}: {height?:number, width?:number}) {
   return (
-     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+     <div className={`h-[${height}px]  bg-gray-200 dark:bg-gray-700 rounded w-[${width}px]`}></div>
   )
 }
 

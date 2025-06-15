@@ -52,7 +52,20 @@ export function useServerStats(timeRange?: TimeRangeType) {
                 return acc
             }, {} as Record<string, number>)
 
-            // Get servers by country with count
+
+            const { data: osData, error: osError } = await supabase
+                .from('servers')
+                .select('os')
+                .order('os')
+
+            if (osError) throw osError
+
+            const osCounts = osData.reduce((acc, { os }) => {
+                acc[os] = (acc[os] || 0) + 1
+                return acc
+            }, {} as Record<string, number>)
+
+            // Get servers by country
             const { data: countryData, error: countryError } = await supabase
                 .from('servers')
                 .select('country')
@@ -140,6 +153,7 @@ export function useServerStats(timeRange?: TimeRangeType) {
                 countryStats,
                 timeRangeStats,
                 archCounts,
+                osCounts,
                 newServersCount,
                 filterStart: startDate,
                 filterEnd: endDate
